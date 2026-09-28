@@ -4,7 +4,6 @@ A standalone Flask and SQLite implementation for the ZhouShenbo88 submission pac
 
 ## Submission and account status
 
-The user requested individual implementations for three group members. This directory holds the independent Flask version assigned to ZhouShenbo88. Student identity, actual contribution attribution, target repository and account authorization must be confirmed before submission. No GitHub login, push, issue, pull request or contribution history has been fabricated. The included workflow is configuration; its presence does not prove a successful hosted CI run.
 
 The planned repository URL is `https://github.com/ZhouShenbo88/redgum-tutoring`, with planned default branch `main`. This URL is a target, not a verified existing repository. After the owner authorizes publication and uploads the files, clone that repository and run the instructions below.
 
