@@ -1,0 +1,6 @@
+{
+  "name": "redgum-zhang", "version": "1.0.0", "private": true,
+  "description": "Independent Redgum scheduling implementation using Node built-ins",
+  "type": "module", "engines": { "node": ">=22" },
+  "scripts": { "start": "node --env-file-if-exists=.env server.js", "test": "node --test" }
+}
