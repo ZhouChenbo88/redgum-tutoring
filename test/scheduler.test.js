@@ -1,0 +1,55 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { Scheduler, weekday } from '../src/scheduler.js';
+import { createServer } from '../server.js';
+
+function fixture(t) {
+  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'redgum-zhang-'));
+  t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));
+  const filename=path.join(directory,'data.json');
+  const store=new Scheduler(filename,{now:()=>new Date('2030-01-01T00:00:00')});
+  const student=store.create('students',{name:'Example learner',year:9,contact:'Example guardian',subjects:['Maths']});
+  const tutor=store.create('tutors',{name:'Example tutor',subjects:['Maths','Physics']});
+  const window=store.create('windows',{tutorId:tutor.id,weekday:0,start:'15:00',end:'18:00'});
+  const booking=(input={})=>store.create('sessions',{studentId:student.id,tutorId:tutor.id,date:'2030-01-07',start:'15:00',duration:60,subject:'Maths',...input});
+  return {store,filename,directory,student,tutor,window,booking};
+}
+test('weekday uses Monday zero and rejects impossible dates',()=>{assert.equal(weekday('2030-01-07'),0);assert.equal(weekday('2030-01-13'),6);assert.throws(()=>weekday('2030-02-30'),/valid calendar/);});
+test('exact availability boundaries support 60 and 90 minutes',t=>{const {booking}=fixture(t);assert.equal(booking({start:'17:00'}).status,'booked');assert.equal(booking({start:'16:30',duration:90}).duration,90);});
+test('reject starts before or finishes after availability',t=>{const {booking}=fixture(t);assert.throws(()=>booking({start:'14:59'}),/one tutor/);assert.throws(()=>booking({start:'17:01'}),/one tutor/);});
+test('weekday and tutor with zero windows are enforced',t=>{const {store,booking}=fixture(t);assert.throws(()=>booking({date:'2030-01-08'}),/weekday/);const tutor=store.create('tutors',{name:'No windows',subjects:['Maths']});assert.throws(()=>booking({tutorId:tutor.id}),/window/);});
+test('adjacent separate windows cannot jointly cover a session',t=>{const {store,window,tutor,booking}=fixture(t);store.update('windows',window.id,{end:'16:00'});store.create('windows',{tutorId:tutor.id,weekday:0,start:'16:00',end:'17:00'});assert.throws(()=>booking({start:'15:30'}),/one tutor/);});
+test('failed move retains original booking in memory and on disk',t=>{const {store,filename,booking}=fixture(t);const original=booking();const before=fs.readFileSync(filename,'utf8');assert.throws(()=>store.update('sessions',original.id,{date:'2030-01-08'}),/window/);assert.deepEqual(store.snapshot().sessions,[original]);assert.equal(fs.readFileSync(filename,'utf8'),before);});
+test('moving tutor/start/duration uses the same window rule',t=>{const {store,booking}=fixture(t);const row=booking();assert.throws(()=>store.update('sessions',row.id,{start:'17:30'}),/window/);assert.throws(()=>store.update('sessions',row.id,{start:'17:00',duration:90}),/window/);const other=store.create('tutors',{name:'Other tutor',subjects:['Maths']});assert.throws(()=>store.update('sessions',row.id,{tutorId:other.id}),/window/);assert.equal(store.update('sessions',row.id,{start:'16:30',duration:90}).start,'16:30');});
+test('inactive tutor and student cannot receive new or moved sessions',t=>{const {store,tutor,student,booking}=fixture(t);const history=booking();store.remove('tutors',tutor.id);assert.throws(()=>booking(),/active/);assert.throws(()=>store.update('sessions',history.id,{start:'16:00'}),/active/);assert.equal(store.snapshot().sessions.length,1);store.update('tutors',tutor.id,{active:true});store.remove('students',student.id);assert.throws(()=>booking(),/active/);assert.equal(store.update('sessions',history.id,{status:'attended'}).status,'attended');});
+test('cancellation preserves student history and unrelated sessions',t=>{const {store,student,booking}=fixture(t);const first=booking(),second=booking({start:'16:00'});store.remove('sessions',first.id);assert.equal(store.view({type:'student',studentId:student.id}).length,2);assert.equal(store.snapshot().sessions.find(row=>row.id===first.id).status,'cancelled');assert.deepEqual(store.snapshot().sessions.find(row=>row.id===second.id),second);});
+test('future booking blocks window shrink/removal without losing state',t=>{const {store,window,booking}=fixture(t);booking();assert.throws(()=>store.update('windows',window.id,{start:'15:30'}),/invalidate/);assert.throws(()=>store.remove('windows',window.id),/invalidate/);assert.equal(store.snapshot().windows[0].start,'15:00');});
+test('another covering window permits removal of redundant window',t=>{const {store,window,tutor,booking}=fixture(t);booking();store.create('windows',{tutorId:tutor.id,weekday:0,start:'14:00',end:'19:00'});store.remove('windows',window.id);assert.equal(store.snapshot().windows.length,1);});
+test('historical booked sessions and cancelled future sessions do not block edits',t=>{const {store,window,booking}=fixture(t);const old=booking({date:'2029-01-01'}),next=booking();store.remove('sessions',next.id);store.remove('windows',window.id);assert.equal(store.snapshot().sessions.length,2);assert.equal(store.snapshot().sessions.find(row=>row.id===old.id).status,'booked');});
+test('historical status-only updates work after timetable changes',t=>{const {store,window,booking}=fixture(t);const old=booking({date:'2029-01-01'});store.remove('windows',window.id);assert.equal(store.update('sessions',old.id,{status:'missed'}).status,'missed');});
+test('tutor upcoming view only contains that tutor future booked sessions and allows empty',t=>{const {store,tutor,booking}=fixture(t);booking({date:'2029-01-01'});const upcoming=booking();for(const status of ['cancelled','attended','missed']){const row=booking({start:'16:00'});store.update('sessions',row.id,{status});}const other=store.create('tutors',{name:'Other',subjects:['Maths']});assert.deepEqual(store.view({type:'tutor',tutorId:tutor.id}),[upcoming]);assert.deepEqual(store.view({type:'tutor',tutorId:other.id}),[]);});
+test('centre day/week and student history return chronological records',t=>{const {store,student,booking}=fixture(t);booking({date:'2030-01-14'});const week=booking();assert.equal(store.view({type:'day',date:'2030-01-07'}).length,1);assert.deepEqual(store.view({type:'week',date:'2030-01-09'}),[week]);assert.equal(store.view({type:'student',studentId:student.id})[0].date,'2030-01-07');});
+test('supported statuses and strictly allowed durations',t=>{const {store,booking}=fixture(t);assert.throws(()=>booking({duration:30}),/60 or 90/);assert.throws(()=>booking({duration:120}),/60 or 90/);const row=booking();assert.throws(()=>store.update('sessions',row.id,{status:'paid'}),/status/);assert.equal(store.update('sessions',row.id,{status:'attended'}).status,'attended');});
+test('missing person fields and empty subjects are refused',t=>{const {store}=fixture(t);const count=store.snapshot().students.length;assert.throws(()=>store.create('students',{name:'Missing',year:9,subjects:['Maths']}),/contact/);assert.throws(()=>store.create('tutors',{name:'Missing',subjects:[]}),/subject/i);assert.equal(store.snapshot().students.length,count);});
+test('year 5 through 12 is supported; younger students are refused',t=>{const {store}=fixture(t);for(const year of [5,12])assert.equal(store.create('students',{name:`Year ${year}`,year,contact:'Example guardian',subjects:['Maths']}).year,year);for(const year of [1,4,13])assert.throws(()=>store.create('students',{name:'Invalid',year,contact:'Example guardian',subjects:['Maths']}),/5 to 12/);});
+test('new bookings ignore user-supplied status and begin booked',t=>{const {booking}=fixture(t);for(const status of ['attended','cancelled','missed','invented'])assert.equal(booking({status}).status,'booked');});
+test('invalid windows and subject mismatch are rejected',t=>{const {store,tutor,booking}=fixture(t);assert.throws(()=>store.create('windows',{tutorId:tutor.id,weekday:7,start:'15:00',end:'16:00'}),/Weekday/);assert.throws(()=>store.create('windows',{tutorId:tutor.id,weekday:0,start:'16:00',end:'15:00'}),/end after/);assert.throws(()=>booking({subject:'Chemistry'}),/does not teach/);});
+test('records restart from atomic JSON with no temporary files left behind',t=>{const {store,filename,directory,booking}=fixture(t);booking();const restarted=new Scheduler(filename);assert.deepEqual(restarted.snapshot(),store.snapshot());assert.deepEqual(fs.readdirSync(directory),['data.json']);assert.doesNotThrow(()=>JSON.parse(fs.readFileSync(filename,'utf8')));});
+test('persistence failure rolls back memory and removes the temporary file',t=>{const {store,directory}=fixture(t);const before=store.snapshot();const blocked=path.join(directory,'blocked.json');fs.mkdirSync(blocked);store.filename=blocked;assert.throws(()=>store.create('tutors',{name:'Not saved',subjects:['Maths']}));assert.deepEqual(store.snapshot(),before);assert.equal(fs.readdirSync(directory).some(name=>name.endsWith('.tmp')),false);});
+test('overlap detection remains out of scope',t=>{const {booking}=fixture(t);assert.notEqual(booking().id,booking().id);});
+test('HTTP routes expose real CRUD, errors, and tutor isolation',async t=>{
+  const {store,tutor,booking}=fixture(t);booking();const server=createServer(store);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));const base=`http://127.0.0.1:${server.address().port}`;
+  const page=await fetch(base+'/');assert.equal(page.status,200);assert.equal(page.headers.get('cache-control'),'no-store');
+  const state=await (await fetch(base+'/api/state')).json();assert.equal(state.sessions.length,1);
+  const filtered=await (await fetch(base+`/api/schedule?type=tutor&tutorId=${tutor.id}`)).json();assert.equal(filtered.length,1);
+  const invalid=await fetch(base+'/api/students',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"name":"Only name"}'});assert.equal(invalid.status,400);assert.ok((await invalid.json()).error);
+  const malformed=await fetch(base+'/api/students',{method:'POST',headers:{'Content-Type':'application/json'},body:'broken'});assert.equal(malformed.status,400);
+  const before=store.snapshot();
+  const foreign=await fetch(base+'/api/students',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://foreign.example'},body:JSON.stringify({name:'Refused',year:9,contact:'Example',subjects:['Maths']})});assert.equal(foreign.status,403);assert.deepEqual(store.snapshot(),before);
+  const plain=await fetch(base+'/api/students',{method:'POST',headers:{'Content-Type':'text/plain'},body:'{}'});assert.equal(plain.status,415);assert.deepEqual(store.snapshot(),before);
+  const foreignDelete=await fetch(base+`/api/tutors/${tutor.id}`,{method:'DELETE',headers:{Origin:'https://foreign.example'}});assert.equal(foreignDelete.status,403);assert.deepEqual(store.snapshot(),before);
+  assert.equal((await fetch(base+'/api/unknown')).status,404);
+});

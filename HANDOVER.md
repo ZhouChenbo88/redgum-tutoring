@@ -1,47 +1,36 @@
-# ZhouShenbo88 Flask implementation: local handover draft
+# Redgum Zhang edition — handover preparation
 
-This is a local, AI-assisted handover draft, not a published Confluence page. The IDs below are local requirement/story identifiers derived from the supplied Redgum case. They are not Jira issue keys. GitHub push, Jira acceptance demonstrations, human pull-request review and Confluence publication remain pending; no story is certified as satisfying the case's full Definition of Done.
+Local source preparation, 2026-09-28. This Markdown document is not a published Confluence handover. Jira mapping, actual GitHub activity and human peer review must be completed genuinely. No existing sprint commitment or issue URL is invented.
 
 ## 1. What was delivered against scope
 
-| Local story ID | Capability implemented | Code/evidence |
-| --- | --- | --- |
-| ST-01 / ST-02 | Student records, editing and soft deactivation; school year, family contact and subjects; persistent identity | `app.py` student schema/validator and `/api/students`; CRUD and persistence tests |
-| TU-01 / TU-02 | Tutor names/subjects and soft deactivation preserving existing sessions; reject new/moved bookings for inactive people | `app.py` tutor routes and session validation; deactivation/history tests |
-| AV-01 | Zero or multiple weekday availability windows; add/edit/delete; proposed changes cannot invalidate future booked sessions | Availability CRUD and transaction validation; boundary, weekday, cross-window and rollback tests |
-| SE-01 / SE-02 | Create/edit/move/cancel sessions; 60 or 90 minutes; booked/attended/cancelled/missed; cancellation preserves the record | Session CRUD/validation; valid move, failed move without data loss and cancellation tests |
-| VI-02 | Tutor-specific upcoming booked-session filter; valid empty result | `/api/tutors/<id>/upcoming` and `/my-schedule`; filter/empty-state test |
-| PE-01 | SQLite persistence, environment configuration, local test suite, example deployment configuration | `README.md`, `.env.example`, `Dockerfile`, CI configuration and app-recreation test |
+Implemented local web workflows: student and tutor records with deactivation; weekly tutor availability; session create/edit/move/cancel and status updates; centre day/week schedule, student history, and tutor-specific future booked list. Atomic JSON persistence and automated behavioural/API tests support the implementation. Local `node --test` with Node v24.19.0 on 2026-09-28 passed 24 tests with no failures. The README contains clean-checkout setup. Link these capabilities to actual Jira stories only after authorized issue creation/verification. The local test result is not evidence of real GitHub/Jira/Confluence activity.
 
-Centre day/week views (VI-01) and student past/future views (VI-03) require the completed UI and its real run verification before final acceptance. Local HTTP tests verify selected implemented behaviour; they do not establish every acceptance criterion, hosted CI or clean GitHub checkout evidence.
+## 2. What was not delivered, and why
 
-## 2. What was not delivered and why
-
-The local backlog is this section plus section 6; no Jira product backlog has been created. Authentication and staff/tutor role permissions are deferred because this is a fictional-data localhost demonstration. Repository publication, story branches, PR review, Jira updates and Confluence handover publication require real authorized account access and human participation.
-
-The case excludes room allocation/clashes, overlap/double-booking detection, invoices, prepaid packs, payments, tutor timesheets/payroll, email/SMS, a parent portal/self-service booking, video links, blue-card tracking, accountant reports and the January intensive. These remain deferred rather than being claimed as delivered. Additional interview/paper wishes—term validity and dated availability exceptions, mid-term timetable changes, reminders, tutor gaps/free-hour reports, printable schedules, lesson coverage notes, long-absent-student reports, NAPLAN and pizza-night activities—need explicit prioritization and acceptance criteria. Cancellation charges and make-up credit belong to a future billing decision.
+Excluded by the core case scope: room allocation/clashes; overlap/double-booking detection; invoices, prepaid packs and payments; payroll; SMS/email sending; portal/self-service; video links; blue-card tracking; accountant reporting; January intensive and other special events. Keep these in the actual product backlog when available. Further wishes from the interviews—free-hour reports, printable tutor sheets, lesson notes and absence reporting—remain deferred. Term-validity dates and exceptional unavailability require more clarified domain work. Authentication was not delivered and records must be fictional. No real Jira/Confluence artifacts, GitHub peer PR review or remote CI run are yet claimed.
 
 ## 3. Setup and run instructions from GitHub
 
-The planned repository is `https://github.com/ZhouShenbo88/redgum-tutoring`, with `main` as the planned default branch. It has not been verified as created or populated. After authorized publication, a new user should clone that real repository and follow `README.md`: create a Python 3.12 virtual environment, install `requirements-dev.txt`, run the Flask factory on localhost, and run `python -m pytest -q`. No clean remote checkout has yet been established. SQLite stores records across restart; preserve the database when copying a running installation. The Docker configuration uses Waitress and a persistent `/data` volume but has not by itself established a tested deployment.
+Repository URL and actual branch are pending authorized GitHub work. Once supplied, clone that repository, check out the genuine Zhang branch, enter the application directory, and follow README: Node 22+, `node server.js`, browser at loopback port 3000; `node --test` for checks. No external dependencies or manually precreated data file are needed. Docker is optional configuration and must be tested in an available runtime before claiming deployment. Capture an actual clean-checkout run and screenshots before marking the fixed case DoD complete.
 
 ## 4. Known issues and limitations
 
-The tutor-specific view is an ID filter, not authenticated identity; the program must use fictional data only. Subject compatibility and inactive-student booking refusal are explicit implementation decisions that require client confirmation. Availability changes protect future booked sessions in the centre's Queensland time (UTC+10); they do not rewrite attended, missed or cancelled history. Times are same-day weekly windows, without dated exceptions or a term calendar. Durations are 60/90 minutes. Overlap detection is outside this scope. The SQLite schema has no automated upgrade migration, and managed backups/restore drills are pending. Development secret settings must not be reused for an external deployment. UI verification and remote/human workflow evidence remain separate completion gates.
+Single-process JSON storage has no simultaneous-server coordination and no built-in backup restore UI. No authentication means tutor filtering is a view, not an access-control boundary. Browser date defaults use Brisbane; keep the server timezone at its Brisbane default to match. Current weekly windows do not model term changes or dated exceptions. Subject labels are exact case-sensitive text. Public production use requires further work. Assumptions: refuse availability edits that strand future booked sessions; inactive students cannot receive new/moved sessions; student subjects are required to record tutoring needs; tutor subject must match; preserve historical states. Overlap detection is intentionally outside scope. Keep any discovered critical defect visible and unresolved stories out of Done.
 
-## 5. Credentials configuration and environment
+## 5. Credentials, configuration and environment
 
-`APP_ENV` selects development/production; `APP_DATABASE` selects the SQLite file; `SECRET_KEY` signs Flask sessions. `.env.example` is illustrative text and is not automatically loaded by Flask; set environment variables explicitly. Production startup rejects the missing/default secret. CSRF tokens are obtained from `/api/csrf` and accompany write requests, but CSRF does not supply authentication. There are no user accounts or test login credentials. Fictional examples use addresses under `example.invalid`. Do not place passwords, access tokens, real family contacts or private student IDs in a public repository.
+No logins or credentials exist in this fictional demo. `.env.example` contains illustrative loopback/port/data-path/timezone values; README explains them. `.env` and `data/` are ignored. Use writable persistent storage and only one server process. Never put real contacts, private identifiers, tokens, `.env`, or real records in the public repository. Configure Node 22/24 for local/CI work.
 
-## 6. Recommended next sprint backlog
+## 6. Recommended next-sprint backlog
 
-| Priority / local backlog ID | Item | Reason |
-| --- | --- | --- |
-| 1 / NEXT-01 | Verify full UI flow against every core acceptance criterion | Working APIs do not prove desk-staff workflows or all views work |
-| 2 / NEXT-02 | Publish under the authorized owner and complete real story branches/PR peer review | The fixed DoD requires authentic repository and human review evidence |
-| 3 / NEXT-03 | Create actual Jira mappings and publish this handover/decisions in Confluence | Local IDs and Markdown do not satisfy these service requirements |
-| 4 / NEXT-04 | Add authenticated roles before handling real records | ID filtering provides no privacy boundary |
-| 5 / NEXT-05 | Confirm subject/inactive-student and availability-history policies with the client | Derived assumptions affect legitimate bookings |
-| 6 / NEXT-06 | Specify term dates and dated availability exceptions | Weekly windows cannot represent all paper timetable examples |
-| 7 / NEXT-07 | Exercise clean checkout and deployment backup/restore | Persistence alone does not establish reproducible recovery |
-| 8 / NEXT-08 | Evaluate requested reports/printing/reminders as separate stories | Interview wishes need explicit scope and measurable acceptance criteria |
+1. Resolve real Jira/Confluence mappings and obtain human PR review: required evidence to meet fixed case DoD.
+2. Verify user-appropriate authentication and tutor access controls: necessary before real personal records or remote access.
+3. Clarify dated availability, term validity and exceptions: reduces mismatch with the supplied paper timetable.
+4. Test a genuine fresh clone and optional container: validates documented deployment independently of the development machine.
+5. Add documented backup/restore and multi-user storage requirements: improves resilience if usage grows.
+6. Clarify subject naming and matching: prevents inconsistent labels in a larger tutor list.
+7. Agree scope for printable tutor sheets and free-hour reports: requested interview conveniences, currently deferred.
+8. Revisit notification and billing integration only with an explicit scope change: these remain outside the case's committed core.
+
+Fixed DoD external items currently pending: pushed story branches; Jira demonstrations/status; human PR review; Confluence decisions/handover. A configured workflow does not certify a CI run, and an AI reviewer does not establish another team member's required review.

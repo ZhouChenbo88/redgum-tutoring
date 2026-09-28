@@ -1,50 +1,72 @@
-# Redgum Tutoring — ZhouShenbo88 Flask version
+# Redgum Centre Desk — Zhang edition
 
-A standalone Flask and SQLite implementation for the ZhouShenbo88 submission package, managing tutors, students, weekly tutor availability and tutoring sessions. It is an AI-assisted implementation prepared for review, execution and explanation by its intended member. This package does not establish that the account owner personally wrote the code or committed it to GitHub.
+An independent Node.js implementation of the Redgum Tutoring case. A local web application with vanilla HTML/CSS/JavaScript and no external runtime libraries. Fictional classroom records only: this demo has no authentication, authorization, payments, room or overlapping-booking detection.
 
-## Submission and account status
+## Run from a clean checkout
 
-The user requested individual implementations for three group members. This directory holds the independent Flask version assigned to ZhouShenbo88. Student identity, actual contribution attribution, target repository and account authorization must be confirmed before submission. No GitHub login, push, issue, pull request or contribution history has been fabricated. The included workflow is configuration; its presence does not prove a successful hosted CI run.
+Prerequisite: Node.js 22 or later (Node 24 is the development runtime). No `npm install` or database service is required.
 
-The planned repository URL is `https://github.com/ZhouShenbo88/redgum-tutoring`, with planned default branch `main`. This URL is a target, not a verified existing repository. After the owner authorizes publication and uploads the files, clone that repository and run the instructions below.
-
-The prototype has no user authentication or authorization. Its tutor-specific view is selected by tutor ID; it is a demonstration filter, not proof of identity. Anyone who can access this prototype can view and change its records. Use fictional data only and keep it on localhost. Do not upload real student names, contact details or tutoring records. A deployment that serves real users requires authenticated roles and access control.
-
-## Local setup
-
-Use Python 3.12. From this directory in PowerShell:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m flask --app app:create_app run --host 127.0.0.1
+```sh
+node server.js
 ```
 
-Open http://127.0.0.1:5000. The SQLite file persists between application restarts. Do not delete it to reset data unless you intend to lose the stored records. Make a copy of the database before changing the schema or removing a deployment.
+Open `http://127.0.0.1:3000`. The first run is deliberately empty. Add a fictional student (name, year 5–12, family contact, subjects), a fictional tutor (name and subjects), and a tutor availability window on the chosen weekday. Book a 60- or 90-minute session matching that tutor's subject. A booking must start and end inside one single window. New sessions always start booked (any supplied creation status is ignored); editing allows attended, cancelled, or missed. Centre day/week, student history, and that tutor's future booked sessions are available in the Schedule area.
 
-Student records require a name, school year 5–12 and a family contact. Sessions last 60 or 90 minutes and must fit within one tutor availability window. Subject compatibility and inactive-student booking refusal are implementation assumptions recorded in `HANDOVER.md`. Overlap/double-booking detection remains outside the requested scope.
+Student/tutor edits and deactivation are in their work areas. Use “Edit / move” for sessions, “Cancel” to retain a cancelled record, and Edit/Remove for availability. Inactive tutors are excluded from new-booking lists; inactive students are also excluded under the documented assumption below. Historic sessions remain viewable.
 
-Run the automated checks:
+The new-session form displays a disabled booked status. When editing a saved session, the status selector becomes available; clearing or saving the form returns it to booked-only creation mode.
 
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
+For optional configuration, copy `.env.example` to `.env`, use illustrative local values, then run:
+
+```sh
+npm start
 ```
 
-The test suite uses a temporary database per test. Local passing tests are distinct from a successful GitHub Actions run. Record the real command, result and date in the group's evidence; do not substitute an invented CI screenshot.
+`npm start` reads `.env` if present; `node server.js` reads process environment values only. The configuration variables are `HOST`, `PORT`, `DATA_FILE`, and `TZ`. Defaults are loopback, port 3000, `data/schedule.json`, and `Australia/Brisbane`. Match `TZ` to the centre before creating records. Relative `DATA_FILE` paths are relative to the command's working directory; start commands from the repository root. Ensure the data directory is writable. Do not commit `.env` or persisted records.
 
-## Container demonstration
+## Test
 
-The container binds port 8080 and stores its database under `/data`. Supply a randomly generated secret and a persistent volume:
-
-```powershell
-docker build -t redgum-baseline .
-docker volume create redgum-data
-docker run --rm -p 127.0.0.1:8080:8080 -v redgum-data:/data -e SECRET_KEY=YOUR_RANDOM_SECRET redgum-baseline
+```sh
+npm test
+# equivalently
+node --test
 ```
 
-Replace `YOUR_RANDOM_SECRET` before starting. Never commit a real secret or `.env` file. The production configuration deliberately fails when its secret is missing. The container remains a fictional-data demonstration until authentication and role permissions are implemented.
+Tests use temporary fictional data and clean up afterward. They cover window boundaries, weekday matching, single-window containment, invalid-move rollback, inactive records, retained histories, availability-change protection, views, atomic-save failure, restart persistence, and HTTP error responses. Overlap detection is explicitly not implemented. CI is configured for Node 22 and 24, but a workflow file is not evidence of a remote CI run.
 
-## Review before assessment
+Verified local execution on 2026-09-28: Node v24.19.0, `node --test`, 24 tests passed with no failures. This records local automated checks; real browser interaction, a GitHub fresh clone, Docker execution and remote CI are separate pending checks.
 
-The intended member should review the requirement-to-feature mapping, run the program and tests, explain the implementation, and check the filled RFP against the original brief. Record real work after the repository and account permissions are confirmed. Report AI assistance according to the subject's requirements. Treat user interviews, usability results, deployment and GitHub activity as future work unless they have actually been performed.
+## Architecture and persistence
 
+`src/scheduler.js` owns validation and transactional state; `server.js` provides HTTP and API routes; `public/` provides the browser interface; `test/` holds meaningful behaviour tests. Mutations clone state, validate, write a unique temporary JSON file beside the final file, flush it, then atomically rename it. Memory is replaced only after a successful save. Failed validation/write leaves the committed in-memory state unchanged. Use one server process per data file; there is no multi-process locking or database-grade recovery. Back up the JSON file while the process is stopped. A corrupt/unsupported file fails startup rather than silently resetting data.
+
+API POST/PATCH requires JSON content type. Write requests carrying an Origin header from a different host are refused; static and API responses use no-store. These checks reduce unintended browser writes to a local demo and do not constitute authentication or access control.
+
+## Domain decisions and scope
+
+- Weekday numbering is 0 Monday through 6 Sunday. Times use HH:MM and stored dates YYYY-MM-DD. New and moved sessions use identical containment checks. A session cannot bridge two adjacent windows.
+- Availability editing/removal is refused if it invalidates a future booked session, evaluated in the centre's server timezone. Move/cancel the affected booking first. Historical sessions and future non-booked sessions do not block changes. Another remaining covering window permits removal. This is an explicit policy chosen where the case does not prescribe the workflow.
+- New/moved sessions require active students and tutors; rejecting inactive students and checking that the tutor teaches the session subject are documented assumptions. Student subjects are required to record what the student is being tutored in, extending the starter story's minimum name/year/contact fields to satisfy the core record description.
+- Status-only changes on historic sessions work after timetable edits. Reopening a cancelled/attended/missed session as booked rechecks current availability and active people.
+- Removing a student/tutor means deactivation. Removing a session means cancellation. Only availability windows are physically removed.
+- Subjects are entered as comma-separated values. Term-specific effective dates and one-off unavailability are deferred. Weekly windows apply to all dates on that weekday; centre opening-hour restrictions are not additionally hard-coded. Browser date defaults use Brisbane time; keep the configured server timezone as Australia/Brisbane to match them.
+- Room allocation/clashes, overlap/double-booking detection, invoices, packs, payments, payroll, reminders, self-service, video links, blue-card tracking, accounting reports and special events are outside committed scope.
+
+## Deployment configuration
+
+Docker configuration is supplied for review. Container execution requires Docker and has not been established merely by creating this file:
+
+```sh
+docker build -t redgum-zhang .
+docker run --rm -p 127.0.0.1:3000:3000 -v redgum-zhang-data:/app/data redgum-zhang
+```
+
+The persistent volume retains the JSON file across container replacement. The image runs as the built-in `node` user. Node base image and GitHub action tags can change: pin reviewed digests/commit SHAs for a maintained production deployment. This app is a local demo; public deployment requires a separately designed authentication/access model and transport protection.
+
+## Configuration-management preparation and evidence
+
+Intended individual GitHub identity: **ZhangYanming88**. Intended project arrangement: an individual branch in the user-designated Zhou repository, pending actual authorized Git operations. No repository URL, branch creation, commits, PR review, remote CI, release tag, Jira, or Confluence activity is claimed by these files. Populate an evidence index with actual links and screenshots after genuine actions. Proposed story branches and release tag are plans, not retrospective claims.
+
+The A2 brief describes individual assessment; the case's fixed Definition of Done also requires story branches pushed to the team repository, Jira acceptance-criterion demonstration, another member's PR review with comments addressed, automated tests, clean-checkout setup, no critical defects, and updated Jira/Confluence. Unmet external-service/human-review requirements remain pending. See `HANDOVER.md`.
+
+Source materials: the user-supplied ISYS3001 A2 Assessment Brief, RFP template and Redgum Tutoring case image. This source repository contains no private student identifiers.

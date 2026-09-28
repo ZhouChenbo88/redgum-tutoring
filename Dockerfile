@@ -1,11 +1,10 @@
-FROM python:3.12-slim
+FROM node:24-alpine
 WORKDIR /app
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-RUN useradd --create-home redgum && mkdir -p /data && chown -R redgum:redgum /app /data
-USER redgum
-ENV APP_ENV=production APP_DATABASE=/data/redgum.sqlite3
-EXPOSE 8080
-CMD ["waitress-serve", "--host=0.0.0.0", "--port=8080", "--call", "app:create_app"]
-
+COPY package.json server.js ./
+COPY src ./src
+COPY public ./public
+RUN mkdir -p /app/data && chown node:node /app/data
+USER node
+ENV HOST=0.0.0.0 PORT=3000 DATA_FILE=/app/data/schedule.json TZ=Australia/Brisbane
+EXPOSE 3000
+CMD ["node", "server.js"]

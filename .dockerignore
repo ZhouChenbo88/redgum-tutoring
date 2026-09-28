@@ -1,9 +1,7 @@
 .git
-.venv
-__pycache__
-.pytest_cache
 .env
-instance
-*.sqlite3
-*.sqlite3-shm
-*.sqlite3-wal
+data
+test
+node_modules
+evidence
+*.log
