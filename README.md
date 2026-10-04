@@ -1,11 +1,12 @@
 # Redgum Tutoring — ZhouShenbo88 Flask version
 
-A standalone Flask and SQLite implementation for the ZhouShenbo88 submission package, managing tutors, students, weekly tutor availability and tutoring sessions. It is an AI-assisted implementation prepared for review, execution and explanation by its intended member. This package does not establish that the account owner personally wrote the code or committed it to GitHub.
+A standalone Flask and SQLite implementation for the ZhouShenbo88 submission package, managing tutors, students, weekly tutor availability and tutoring sessions. It is AI-assisted work prepared for the member to review, run and explain. The authenticated ZhouShenbo88 account has published the repository; the published Git commit author is ZhouShenbo88 after an authorized history rewrite. The project remains AI-assisted, so commit attribution alone does not establish independent human authorship.
 
 ## Submission and account status
 
+The user requested individual implementations for three group members. This directory holds the independent Flask version assigned to ZhouShenbo88. The public repository was created and populated using the authenticated ZhouShenbo88 account. The `main` branch and actual story branch `codex/zhou-rg-core` were pushed. The rewritten integration commit is `d1cda9c2389c4f7fc283fd1b307e1b1f99004cd9`; the verified code and CI baseline is `8a1306b91e823bcde15fad976aa25de5fbc888d9`. Earlier Codex-attributed SHAs were replaced; the source tree is unchanged except for a separate README edit on `main`. See `docs/PUBLICATION.md` for the verified scope and outstanding evidence.
 
-The planned repository URL is `https://github.com/ZhouShenbo88/redgum-tutoring`, with planned default branch `main`. This URL is a target, not a verified existing repository. After the owner authorizes publication and uploads the files, clone that repository and run the instructions below.
+Repository: [ZhouShenbo88/redgum-tutoring](https://github.com/ZhouShenbo88/redgum-tutoring), default branch `main`. Clone it and follow the instructions below. A fresh local Git clone passed 41 tests; this verifies a clean local checkout and is distinct from independently testing a download from GitHub. The remote `main` pytest workflow [run 37217105790](https://github.com/ZhouShenbo88/redgum-tutoring/actions/runs/37217105790) completed successfully for code baseline `8a1306b91e823bcde15fad976aa25de5fbc888d9`. Genuine human peer review, Jira updates and Confluence publication remain pending.
 
 The prototype has no user authentication or authorization. Its tutor-specific view is selected by tutor ID; it is a demonstration filter, not proof of identity. Anyone who can access this prototype can view and change its records. Use fictional data only and keep it on localhost. Do not upload real student names, contact details or tutoring records. A deployment that serves real users requires authenticated roles and access control.
 
@@ -29,7 +30,7 @@ Run the automated checks:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The test suite uses a temporary database per test. Local passing tests are distinct from a successful GitHub Actions run. Record the real command, result and date in the group's evidence; do not substitute an invented CI screenshot.
+The test suite uses a temporary database per test. The fresh local clone of the pre-rewrite, source-equivalent tree passed **41 tests** using `python -m pytest -q` on 28 September 2026. The rewritten code baseline was separately validated by the linked GitHub Actions run. The final staged application also ran under Waitress in a real browser: student/tutor CRUD, rejection of an out-of-window session and acceptance of a valid booking succeeded. Day/week schedules and student history views are implemented. Remote pytest CI succeeded in the linked run. These results do not verify a container build/recovery, production readiness or another person's acceptance review.
 
 ## Container demonstration
 
@@ -45,5 +46,5 @@ Replace `YOUR_RANDOM_SECRET` before starting. Never commit a real secret or `.en
 
 ## Review before assessment
 
-The intended member should review the requirement-to-feature mapping, run the program and tests, explain the implementation, and check the filled RFP against the original brief. Record real work after the repository and account permissions are confirmed. Report AI assistance according to the subject's requirements. Treat user interviews, usability results, deployment and GitHub activity as future work unless they have actually been performed.
+The intended member should review the requirement-to-feature mapping and the recorded local browser/test/remote CI results, explain the implementation, and check the filled RFP against the original brief. Report AI assistance according to the subject's requirements. Repository creation, the two branch pushes and the identified remote pytest run are completed facts. Human peer review and Jira/Confluence evidence remain outstanding; no client interview, public deployment or production acceptance is claimed.
 
