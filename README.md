@@ -1,4 +1,4 @@
-# Redgum Tutoring — ZhouShenbo88 Flask version
+# Redgum Tutoring — ZhouChenbo88 Flask version
 
 A standalone Flask and SQLite implementation for the ZhouShenbo88 submission package, managing tutors, students, weekly tutor availability and tutoring sessions. It is AI-assisted work prepared for the member to review, run and explain. The authenticated ZhouShenbo88 account has published the repository; the published Git commit author is ZhouShenbo88 after an authorized history rewrite. The project remains AI-assisted, so commit attribution alone does not establish independent human authorship.
 
