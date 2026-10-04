@@ -6,6 +6,13 @@ An independent Node.js implementation of the Redgum Tutoring case. A local web a
 
 Prerequisite: Node.js 22 or later (Node 24 is the development runtime). No `npm install` or database service is required.
 
+Published source: [Zhang's zhangyanming branch](https://github.com/ZhouShenbo88/redgum-tutoring/tree/zhangyanming). To obtain this independent Node implementation:
+
+```sh
+git clone --branch zhangyanming https://github.com/ZhouShenbo88/redgum-tutoring.git redgum-zhang
+cd redgum-zhang
+```
+
 ```sh
 node server.js
 ```
@@ -32,9 +39,9 @@ npm test
 node --test
 ```
 
-Tests use temporary fictional data and clean up afterward. They cover window boundaries, weekday matching, single-window containment, invalid-move rollback, inactive records, retained histories, availability-change protection, views, atomic-save failure, restart persistence, and HTTP error responses. Overlap detection is explicitly not implemented. CI is configured for Node 22 and 24, but a workflow file is not evidence of a remote CI run.
+Tests use temporary fictional data and clean up afterward. They cover window boundaries, weekday matching, single-window containment, invalid-move rollback, inactive records, retained histories, availability-change protection, views, atomic-save failure, restart persistence, and HTTP error responses. Overlap detection is explicitly not implemented. The published [GitHub Actions run 37217130857](https://github.com/ZhouShenbo88/redgum-tutoring/actions/runs/37217130857) was verified successful for its Node 22/24 matrix.
 
-Verified local execution on 2026-09-28: Node v24.19.0, `node --test`, 24 tests passed with no failures. This records local automated checks; real browser interaction, a GitHub fresh clone, Docker execution and remote CI are separate pending checks.
+Verified local execution on 2026-09-28: Node v24.19.0, `node --test`, 24 tests passed with no failures. A fresh local Git clone of the source-equivalent pre-rewrite Zhang branch passed all 24 tests; the current rewritten branch was separately verified by the linked GitHub Actions run. The final staged browser check saved fictional student/tutor records, refused an invalid 18:30 one-hour booking outside availability, and displayed a valid 16:00 session as booked. The local clone check is distinct from the successful remote CI run; Docker execution remains unverified.
 
 ## Architecture and persistence
 
@@ -63,10 +70,10 @@ docker run --rm -p 127.0.0.1:3000:3000 -v redgum-zhang-data:/app/data redgum-zha
 
 The persistent volume retains the JSON file across container replacement. The image runs as the built-in `node` user. Node base image and GitHub action tags can change: pin reviewed digests/commit SHAs for a maintained production deployment. This app is a local demo; public deployment requires a separately designed authentication/access model and transport protection.
 
-## Configuration-management preparation and evidence
+## Configuration management and publication evidence
 
-Intended individual GitHub identity: **ZhangYanming88**. Intended project arrangement: an individual branch in the user-designated Zhou repository, pending actual authorized Git operations. No repository URL, branch creation, commits, PR review, remote CI, release tag, Jira, or Confluence activity is claimed by these files. Populate an evidence index with actual links and screenshots after genuine actions. Proposed story branches and release tag are plans, not retrospective claims.
+Individual GitHub account: **ZhangYanming88**. Its collaborator invitation to the Zhou-owned repository was accepted, and the Zhang implementation was published through the authenticated collaborator account at [ZhouShenbo88/redgum-tutoring, branch zhangyanming](https://github.com/ZhouShenbo88/redgum-tutoring/tree/zhangyanming). The story branch [codex/zhang-rg-core](https://github.com/ZhouShenbo88/redgum-tutoring/tree/codex/zhang-rg-core) was also pushed. The rewritten code/CI baseline is `980e8a9540419a3c9c1204dde39fce29472e4793`. Its Git commit author is **ZhangYanming88** after the authorized history rewrite. The project remains AI-assisted, and commit attribution alone cannot prove independent human authorship. [Remote CI](https://github.com/ZhouShenbo88/redgum-tutoring/actions/runs/37217130857) succeeded on Node 22 and 24. See `docs/PUBLICATION.md` for the evidence boundaries.
 
-The A2 brief describes individual assessment; the case's fixed Definition of Done also requires story branches pushed to the team repository, Jira acceptance-criterion demonstration, another member's PR review with comments addressed, automated tests, clean-checkout setup, no critical defects, and updated Jira/Confluence. Unmet external-service/human-review requirements remain pending. See `HANDOVER.md`.
+The A2 brief describes individual assessment; the case's fixed Definition of Done also requires story branches pushed to the team repository, Jira acceptance-criterion demonstration, another member's PR review with comments addressed, automated tests, clean-checkout setup, no critical defects, and updated Jira/Confluence. Publication, automated checks and local browser evidence are recorded above. Another human member's PR review, Jira demonstrations/status and Confluence decisions/handover remain pending. See `HANDOVER.md`.
 
 Source materials: the user-supplied ISYS3001 A2 Assessment Brief, RFP template and Redgum Tutoring case image. This source repository contains no private student identifiers.
